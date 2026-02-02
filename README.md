@@ -2,7 +2,7 @@
 
 **Guess Base Social metrics. Win bragging rights.**
 
-A prediction game for Base social posts - guess the engagement metrics within 24 hours and climb the leaderboard!
+A mobile-first prediction game for Base social posts.
 
 ## 🎮 How It Works
 
@@ -11,32 +11,49 @@ A prediction game for Base social posts - guess the engagement metrics within 24
 3. **Submit your prediction** (free to play)
 4. **Check back in 24h** - closest guesses win!
 
-## 🏆 Scoring
+## 📱 Mobile Installation
 
-- **Accuracy-based scoring**: How close were you to actual metrics?
-- **Streak system**: Consecutive correct predictions
-- **Leaderboard**: Top predictors get eternal glory
+### Option 1: PWA (Install as App)
+1. Open the site in mobile browser (Safari/Chrome)
+2. Tap "Share" → "Add to Home Screen"
+3. Works like a native app!
 
-## 🛠️ Tech Stack
+### Option 2: Native iOS/Android App
+```bash
+# Install dependencies
+npm install
 
-- Pure HTML/CSS/JS
-- Farcaster API (for fetching posts)
-- LocalStorage (for predictions)
+# Build iOS app
+npm run build:ios
+
+# Build Android app  
+npm run build:android
+```
 
 ## 🚀 Deploy
 
+### Web (PWA)
 ```bash
-cd projects/base-viral-predictor
 vercel --prod
 ```
 
+### Native Apps
+Requires Xcode (iOS) or Android Studio (Android).
+
+## 🛠️ Tech Stack
+
+- **Frontend**: HTML + Tailwind CSS (mobile-first)
+- **PWA**: Service Worker + Manifest
+- **Native**: Capacitor (iOS/Android wrapper)
+- **Storage**: localStorage (predictions)
+
 ## 🔮 Future Features
 
-- [ ] Wallet connection for staking small amounts
-- [ ] NFT badges for top predictors
-- [ ] Group challenges (friend leaderboards)
-- [ ] AI-powered prediction suggestions
-- [ ] Integration with Base Mini Apps
+- [ ] Real Farcaster API integration
+- [ ] Wallet connection
+- [ ] On-chain predictions with small stakes
+- [ ] Push notifications for results
+- [ ] Friend leaderboards
 
 ---
 

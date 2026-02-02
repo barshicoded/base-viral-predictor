@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viral Predictor - Guess Base Social Metrics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Viral Predictor</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -19,6 +24,17 @@
         .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
         .metric-card { transition: all 0.3s ease; }
         .metric-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.05); }
+        .metric-card:active { transform: scale(0.98); }
+        /* Mobile optimizations */
+        @supports (-webkit-touch-callout: none) {
+            /* iOS specific */
+            body { -webkit-tap-highlight-color: transparent; }
+        }
+        input, button { -webkit-appearance: none; border-radius: 0.75rem; }
+        /* Safe area for notched phones */
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
     </style>
 </head>
 <body class="text-white">
@@ -33,9 +49,11 @@
                 </div>
             </div>
             <div class="flex items-center gap-4">
-                <a href="https://x.com/fitiwins" target="_blank" class="text-sm text-gray-400 hover:text-white transition">@fitiwins</a>
+                <button id="installBtn" onclick="installApp()" class="hidden px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-xs text-blue-400">
+                    📲 Install App
+                </button>
                 <div class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs">
-                    🏆 <span id="userStreak">0</span> streak
+                    🔥 <span id="userStreak">0</span>
                 </div>
             </div>
         </div>
@@ -291,6 +309,29 @@
         // Load streak from localStorage
         const streak = localStorage.getItem('predictionStreak') || 0;
         document.getElementById('userStreak').textContent = streak;
+
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        // Handle PWA install prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').classList.remove('hidden');
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    deferredPrompt = null;
+                    document.getElementById('installBtn').classList.add('hidden');
+                });
+            }
+        }
     </script>
 </body>
 </html>
