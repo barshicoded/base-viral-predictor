@@ -1,0 +1,25 @@
+{
+  "name": "Viral Predictor",
+  "shortName": "Viral",
+  "description": "Guess Base Social post metrics. Predict likes, recasts, comments & tips in 24h. Closest wins!",
+  "icon": "https://your-domain.com/icon-512.png",
+  "startUrl": "https://your-domain.com/minikit.html",
+  "category": "Social",
+  "screenshots": [
+    "https://your-domain.com/screenshot-1.png",
+    "https://your-domain.com/screenshot-2.png"
+  ],
+  "author": {
+    "name": "fitiwins",
+    "twitter": "@fitiwins",
+    "address": "0x72613A96ddB66C9d26F5e69515294Ff54F6C0357"
+  },
+  "version": "1.0.0",
+  "permissions": [
+    "user:profile"
+  ],
+  "features": [
+    "social-sharing",
+    "local-storage"
+  ]
+}

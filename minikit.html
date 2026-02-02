@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0052ff">
+    <title>Viral Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@coinbase/onchainkit@latest/dist/index.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: white; }
+        .safe-top { padding-top: env(safe-area-inset-top); }
+        .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 20px); }
+        .gradient-text { background: linear-gradient(135deg, #0052ff 0%, #00d4ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn-primary { background: linear-gradient(135deg, #0052ff 0%, #00d4ff 100%); }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="safe-top px-4 py-3 bg-black/50 backdrop-blur border-b border-white/10">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-sm">📈</div>
+                <h1 class="font-bold text-lg">Viral Predictor</h1>
+            </div>
+            <div class="text-xs text-gray-400">
+                🔥 <span id="streak">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 px-4 py-4 overflow-y-auto">
+        <!-- Welcome State -->
+        <div id="welcomeState" class="text-center py-8">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 via-cyan-400 to-green-400 flex items-center justify-center text-4xl pulse">
+                📈
+            </div>
+            <h2 class="text-2xl font-bold mb-2 gradient-text">Predict the Viral</h2>
+            <p class="text-gray-400 text-sm mb-6">
+                Guess Base Social metrics in 24h.<br>Closest predictions win!
+            </p>
+            <button onclick="startGame()" class="btn-primary w-full py-4 rounded-xl font-semibold text-lg">
+                Start Predicting 🎯
+            </button>
+        </div>
+
+        <!-- Game State (Hidden) -->
+        <div id="gameState" class="hidden space-y-4">
+            <!-- Post Preview -->
+            <div class="glass rounded-xl p-4 border border-white/10">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-lg">🎭</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-semibold text-sm">@basebuilder.eth</span>
+                            <span class="text-xs text-gray-500">· 3h ago</span>
+                        </div>
+                        <p class="text-sm text-gray-200 mb-2 line-clamp-3">
+                            Just dropped something huge on Base. The next 24 hours are going to be wild. Who's ready? 👇
+                        </p>
+                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                            <span>❤️ 1.2k</span>
+                            <span>🔄 234</span>
+                            <span>💬 89</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Predictions -->
+            <div class="space-y-3">
+                <p class="text-sm font-medium text-gray-400">🔮 Your 24h Predictions</p>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="glass rounded-xl p-3">
+                        <label class="text-xs text-gray-500 block mb-1">❤️ Likes</label>
+                        <input type="number" id="predLikes" placeholder="2,500" 
+                            class="w-full bg-transparent text-lg font-semibold focus:outline-none placeholder-gray-600">
+                    </div>
+                    <div class="glass rounded-xl p-3">
+                        <label class="text-xs text-gray-500 block mb-1">🔄 Recasts</label>
+                        <input type="number" id="predRecasts" placeholder="400" 
+                            class="w-full bg-transparent text-lg font-semibold focus:outline-none placeholder-gray-600">
+                    </div>
+                    <div class="glass rounded-xl p-3">
+                        <label class="text-xs text-gray-500 block mb-1">💬 Comments</label>
+                        <input type="number" id="predComments" placeholder="150" 
+                            class="w-full bg-transparent text-lg font-semibold focus:outline-none placeholder-gray-600">
+                    </div>
+                    <div class="glass rounded-xl p-3">
+                        <label class="text-xs text-gray-500 block mb-1">💰 Tips (ETH)</label>
+                        <input type="number" id="predTips" placeholder="1.5" step="0.1"
+                            class="w-full bg-transparent text-lg font-semibold focus:outline-none placeholder-gray-600">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button onclick="submitPrediction()" class="btn-primary w-full py-4 rounded-xl font-semibold">
+                Lock In Prediction 🔒
+            </button>
+
+            <!-- Leaderboard Preview -->
+            <div class="glass rounded-xl p-4">
+                <p class="text-sm font-medium mb-3">🏆 Top Predictors</p>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center gap-2">
+                            <span>🥇</span>
+                            <span>@basegod</span>
+                        </div>
+                        <span class="text-green-400 font-semibold">94%</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center gap-2">
+                            <span>🥈</span>
+                            <span>@jesse</span>
+                        </div>
+                        <span class="text-green-400 font-semibold">91%</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center gap-2">
+                            <span>🥉</span>
+                            <span>@fitiwins</span>
+                        </div>
+                        <span class="text-green-400 font-semibold">89%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success State (Hidden) -->
+        <div id="successState" class="hidden text-center py-12">
+            <div class="text-6xl mb-4">🎯</div>
+            <h3 class="text-xl font-bold mb-2">Prediction Locked!</h3>
+            <p class="text-gray-400 text-sm mb-6">
+                Check back in 24 hours to see if you won.
+            </p>
+            <button onclick="sharePrediction()" class="w-full py-3 rounded-xl bg-white/10 border border-white/20 font-medium mb-3">
+                Share on Base 📤
+            </button>
+            <button onclick="startGame()" class="text-sm text-gray-400">
+                Predict Another
+            </button>
+        </div>
+    </main>
+
+    <!-- MiniKit Provider -->
+    <script type="module">
+        import { MiniKit } from '@coinbase/onchainkit/minikit';
+
+        // Initialize MiniKit for Base Mini App
+        MiniKit.install();
+
+        // Get user context from Base App
+        const context = MiniKit.getContext();
+        console.log('Base App context:', context);
+
+        // Update UI with user info if available
+        if (context?.user?.username) {
+            document.getElementById('userName').textContent = context.user.username;
+        }
+
+        // Track streak
+        let streak = parseInt(localStorage.getItem('predictionStreak') || '0');
+        document.getElementById('streak').textContent = streak;
+    </script>
+
+    <script>
+        function startGame() {
+            document.getElementById('welcomeState').classList.add('hidden');
+            document.getElementById('gameState').classList.remove('hidden');
+            document.getElementById('successState').classList.add('hidden');
+        }
+
+        function submitPrediction() {
+            const likes = document.getElementById('predLikes').value;
+            const recasts = document.getElementById('predRecasts').value;
+            const comments = document.getElementById('predComments').value;
+            const tips = document.getElementById('predTips').value;
+
+            if (!likes || !recasts || !comments || !tips) {
+                alert('Fill in all predictions!');
+                return;
+            }
+
+            // Save prediction
+            const prediction = {
+                postId: 'demo-post-1',
+                likes, recasts, comments, tips,
+                timestamp: Date.now(),
+                resolved: false
+            };
+            
+            let predictions = JSON.parse(localStorage.getItem('predictions') || '[]');
+            predictions.push(prediction);
+            localStorage.setItem('predictions', JSON.stringify(predictions));
+
+            // Show success
+            document.getElementById('gameState').classList.add('hidden');
+            document.getElementById('successState').classList.remove('hidden');
+
+            // Update streak
+            let streak = parseInt(localStorage.getItem('predictionStreak') || '0');
+            streak++;
+            localStorage.setItem('predictionStreak', streak);
+            document.getElementById('streak').textContent = streak;
+
+            // Share to Base if available
+            if (window.MiniKit) {
+                MiniKit.share({
+                    text: `I just predicted @basebuilder.eth's post metrics! 🔮\n\nThink you can do better?`,
+                    url: window.location.href
+                });
+            }
+        }
+
+        function sharePrediction() {
+            if (window.MiniKit) {
+                MiniKit.share({
+                    text: `🔮 Just locked in my prediction for @basebuilder.eth\'s viral post!\n\nWho thinks they can beat my guess? 👇`,
+                    url: window.location.href
+                });
+            } else {
+                // Fallback - copy to clipboard
+                navigator.clipboard.writeText(window.location.href);
+                alert('Link copied! Share it on Base.');
+            }
+        }
+    </script>
+</body>
+</html>
