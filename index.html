@@ -367,7 +367,7 @@
             <div class="terminal">
                 <div class="terminal-header">
                     <span>SYSTEM_MSG</span>
-                    <span>[OK]</span>
+                    <span id="apiStatus">[DEMO_MODE]</span>
                 </div>
                 <div class="terminal-body">
                     <p>> Initializing...</p>
@@ -377,6 +377,10 @@
                     <p>Paste a Base social post URL.</p>
                     <p>Predict metrics in 24h.</p>
                     <p class="glow-cyan">Closest guess wins.</p>
+                    <br>
+                    <p id="apiMessage" style="color: var(--fg-dim); font-size: 14px;">
+                        > Demo mode active. <a href="#" onclick="setupApiKey(); return false;" style="color: var(--accent);">[Add API Key]</a> for real data.
+                    </p>
                 </div>
             </div>
 
@@ -386,7 +390,7 @@
                     <span class="cursor"></span>
                 </div>
                 <div class="terminal-body">
-                    <input type="text" id="postUrl" placeholder="https://base.org/post/...">
+                    <input type="text" id="postUrl" placeholder="https://warpcast.com/username/0x...">
                     <br><br>
                     <button onclick="loadPost()" class="btn btn-full">
                         [LOAD_POST]
@@ -526,14 +530,222 @@
         const streak = localStorage.getItem('vp_streak') || '0';
         document.getElementById('streakVal').textContent = streak;
 
-        function loadPost() {
-            const url = document.getElementById('postUrl').value;
+        // Neynar API config - Get free key at neynar.com
+        const NEYNAR_API_KEY = localStorage.getItem('neynar_api_key') || '';
+        
+        // Update API status on load
+        if (NEYNAR_API_KEY) {
+            document.getElementById('apiStatus').textContent = '[LIVE_DATA]';
+            document.getElementById('apiStatus').style.color = 'var(--fg)';
+            document.getElementById('apiMessage').innerHTML = 
+                '> Live data mode active. <a href="#" onclick="localStorage.removeItem(\'neynar_api_key\'); location.reload(); return false;" style="color: var(--accent);">[Remove Key]</a>';
+        }
+        
+        // Parse Base/Warpcast URL to get cast hash
+        function parseCastUrl(url) {
+            // Warpcast: https://warpcast.com/username/0x... (cast hash)
+            // Base App: https://base.org/post/0x... or similar
+            
+            try {
+                const urlObj = new URL(url);
+                const pathParts = urlObj.pathname.split('/').filter(p => p);
+                
+                // Look for cast hash (0x followed by hex)
+                for (const part of pathParts) {
+                    if (part.startsWith('0x') && part.length >= 10) {
+                        return part;
+                    }
+                }
+                
+                // Try query params
+                const hash = urlObj.searchParams.get('castHash') || urlObj.searchParams.get('hash');
+                if (hash) return hash;
+                
+                return null;
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        async function fetchCastData(url) {
+            const hash = parseCastUrl(url);
+            
+            if (!hash) {
+                console.log('> Could not parse cast hash from URL');
+                return null;
+            }
+            
+            if (!NEYNAR_API_KEY) {
+                console.log('> No API key - using demo mode');
+                return null;
+            }
+            
+            try {
+                // Fetch from Neynar API
+                const response = await fetch(`https://api.neynar.com/v2/farcaster/cast?identifier=${hash}&type=hash`, {
+                    headers: {
+                        'api_key': NEYNAR_API_KEY,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const cast = data.cast;
+                
+                return {
+                    author: cast.author.username || cast.author.display_name,
+                    displayName: cast.author.display_name,
+                    avatar: cast.author.pfp_url,
+                    content: cast.text,
+                    likes: cast.reactions?.likes_count || cast.reactions?.length || 0,
+                    recasts: cast.reactions?.recasts_count || cast.recasts?.length || 0,
+                    replies: cast.replies?.count || cast.replies || 0,
+                    timestamp: cast.timestamp,
+                    hash: cast.hash,
+                    warpcastUrl: cast.warpcast_url || `https://warpcast.com/${cast.author.username}/${cast.hash.slice(0, 10)}`
+                };
+            } catch (error) {
+                console.error('> Fetch error:', error);
+                return null;
+            }
+        }
+        
+        // Demo posts for testing (when no API key)
+        const DEMO_POSTS = [
+            {
+                author: 'jessepollak',
+                displayName: 'Jesse Pollak',
+                avatar: null,
+                content: 'base is for everyone. the next billion users are coming onchain. who\'s building something special? 👇',
+                likes: 2847,
+                recasts: 523,
+                replies: 189,
+                timestamp: Date.now() - 3600000,
+                hash: '0xabc123',
+                warpcastUrl: 'https://warpcast.com/jessepollak/0xabc123'
+            },
+            {
+                author: 'dwr',
+                displayName: 'Dan Romero',
+                avatar: null,
+                content: 'Farcaster hit 100k DAU today. Insane growth. What should we build next?',
+                likes: 4521,
+                recasts: 892,
+                replies: 567,
+                timestamp: Date.now() - 7200000,
+                hash: '0xdef456',
+                warpcastUrl: 'https://warpcast.com/dwr/0xdef456'
+            },
+            {
+                author: 'base',
+                displayName: 'Base',
+                avatar: null,
+                content: '🟡 Base mainnet is live. Welcome to the next generation of onchain.',
+                likes: 12543,
+                recasts: 3421,
+                replies: 1234,
+                timestamp: Date.now() - 1800000,
+                hash: '0xghi789',
+                warpcastUrl: 'https://warpcast.com/base/0xghi789'
+            }
+        ];
+        
+        async function loadPost() {
+            const urlInput = document.getElementById('postUrl');
+            const url = urlInput.value.trim();
+            
             if (!url) {
                 alert('> ERROR: URL_REQUIRED');
                 return;
             }
+            
+            // Show loading
+            const btn = document.querySelector('button[onclick="loadPost()"]');
+            const originalText = btn.textContent;
+            btn.textContent = '[LOADING...]';
+            btn.disabled = true;
+            
+            let postData = null;
+            
+            // Try to fetch real data
+            if (NEYNAR_API_KEY) {
+                postData = await fetchCastData(url);
+            }
+            
+            // Fallback to demo data if no API key or fetch failed
+            if (!postData) {
+                // Pick random demo post or match by URL pattern
+                const hash = parseCastUrl(url);
+                if (hash) {
+                    // Use hash to deterministically pick a demo post
+                    const index = parseInt(hash.slice(-1), 16) % DEMO_POSTS.length;
+                    postData = DEMO_POSTS[index];
+                    console.log('> Using demo data (no API key)');
+                    console.log('> Get free API key at: neynar.com');
+                } else {
+                    postData = DEMO_POSTS[0];
+                }
+            }
+            
+            // Update UI with post data
+            updatePostDisplay(postData);
+            
+            // Show game screen
             document.getElementById('welcomeScreen').classList.add('hidden');
             document.getElementById('gameScreen').classList.remove('hidden');
+            
+            // Reset button
+            btn.textContent = originalText;
+            btn.disabled = false;
+            
+            // Store current post for prediction
+            window.currentPost = postData;
+        }
+        
+        function updatePostDisplay(post) {
+            // Create/update post HTML
+            const postHtml = `
+                <div class="post-preview">
+                    <div class="post-author">@${post.author}</div>
+                    <div class="post-content">${escapeHtml(post.content)}</div>
+                    <div class="post-meta">
+                        ❤️ ${formatNumber(post.likes)} · 
+                        🔄 ${formatNumber(post.recasts)} · 
+                        💬 ${formatNumber(post.replies)}
+                    </div>
+                </div>
+            `;
+            
+            // Find or create post container
+            let postContainer = document.querySelector('.post-preview');
+            if (postContainer) {
+                postContainer.outerHTML = postHtml;
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+            return num.toString();
+        }
+        
+        // API Key setup
+        function setupApiKey() {
+            const key = prompt('Enter Neynar API key (get free at neynar.com):\n\nOr leave empty for demo mode');
+            if (key) {
+                localStorage.setItem('neynar_api_key', key);
+                location.reload();
+            }
         }
 
         function submitPred() {
