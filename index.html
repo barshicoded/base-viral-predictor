@@ -3,334 +3,568 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0a0a0f">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Viral Predictor</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#000000">
+    <title>viral_predictor.exe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%); min-height: 100vh; }
-        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-        .gradient-text { background: linear-gradient(135deg, #0052ff 0%, #00d4ff 50%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .glow-blue { box-shadow: 0 0 30px rgba(0, 82, 255, 0.3); }
-        .input-glow:focus { box-shadow: 0 0 0 3px rgba(0, 82, 255, 0.3); }
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
-            50% { box-shadow: 0 0 40px rgba(0, 212, 255, 0.6); }
+        :root {
+            --bg: #0a0a0a;
+            --fg: #00ff41;
+            --fg-dim: #008f11;
+            --accent: #ff0080;
+            --accent2: #00ffff;
+            --border: #333;
         }
-        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
-        .metric-card { transition: all 0.3s ease; }
-        .metric-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.05); }
-        .metric-card:active { transform: scale(0.98); }
-        /* Mobile optimizations */
-        @supports (-webkit-touch-callout: none) {
-            /* iOS specific */
-            body { -webkit-tap-highlight-color: transparent; }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-        input, button { -webkit-appearance: none; border-radius: 0.75rem; }
-        /* Safe area for notched phones */
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        /* Smooth scrolling */
-        html { scroll-behavior: smooth; }
+        
+        body {
+            font-family: 'VT323', monospace;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            font-size: 18px;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+        
+        /* CRT scanline effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%,
+                rgba(0, 0, 0, 0.25) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        /* Glow effect */
+        .glow {
+            text-shadow: 0 0 10px var(--fg), 0 0 20px var(--fg-dim);
+        }
+        
+        .glow-pink {
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent);
+        }
+        
+        .glow-cyan {
+            color: var(--accent2);
+            text-shadow: 0 0 10px var(--accent2);
+        }
+        
+        /* Layout */
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            letter-spacing: 2px;
+        }
+        
+        .header .sub {
+            color: var(--fg-dim);
+            font-size: 14px;
+        }
+        
+        /* Terminal box */
+        .terminal {
+            border: 2px solid var(--border);
+            background: rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+        
+        .terminal-header {
+            background: var(--border);
+            padding: 5px 10px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .terminal-body {
+            padding: 15px;
+        }
+        
+        /* Blinking cursor */
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 18px;
+            background: var(--fg);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        /* Inputs */
+        input[type="text"],
+        input[type="number"] {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--fg-dim);
+            color: var(--fg);
+            width: 100%;
+            padding: 8px 0;
+            outline: none;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            border-bottom-color: var(--accent);
+        }
+        
+        input::placeholder {
+            color: var(--fg-dim);
+        }
+        
+        /* Buttons */
+        .btn {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            background: transparent;
+            color: var(--fg);
+            border: 2px solid var(--fg);
+            padding: 10px 20px;
+            cursor: pointer;
+            display: inline-block;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            background: var(--fg);
+            color: var(--bg);
+        }
+        
+        .btn-pink {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        
+        .btn-pink:hover {
+            background: var(--accent);
+            color: var(--bg);
+        }
+        
+        .btn-cyan {
+            border-color: var(--accent2);
+            color: var(--accent2);
+        }
+        
+        .btn-cyan:hover {
+            background: var(--accent2);
+            color: var(--bg);
+        }
+        
+        .btn-full {
+            width: 100%;
+        }
+        
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-box {
+            border: 1px solid var(--border);
+            padding: 10px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--fg-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        /* Post preview */
+        .post-preview {
+            border: 1px dashed var(--fg-dim);
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .post-preview::before {
+            content: '<POST>';
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background: var(--bg);
+            padding: 0 5px;
+            font-size: 12px;
+            color: var(--fg-dim);
+        }
+        
+        .post-author {
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        
+        .post-content {
+            color: #ccc;
+            font-size: 16px;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        
+        .post-meta {
+            font-size: 14px;
+            color: var(--fg-dim);
+        }
+        
+        /* Prediction inputs */
+        .pred-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .pred-input label {
+            display: block;
+            font-size: 14px;
+            color: var(--fg-dim);
+            margin-bottom: 5px;
+        }
+        
+        /* ASCII art */
+        .ascii {
+            font-size: 10px;
+            line-height: 1.2;
+            color: var(--fg-dim);
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Leaderboard */
+        .lb-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .lb-rank {
+            color: var(--accent);
+            width: 40px;
+        }
+        
+        .lb-name {
+            flex: 1;
+        }
+        
+        .lb-score {
+            color: var(--accent2);
+        }
+        
+        /* Typewriter effect */
+        .typewriter {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 3s steps(40, end);
+        }
+        
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        
+        /* Glitch effect */
+        .glitch {
+            position: relative;
+        }
+        
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .glitch::before {
+            animation: glitch-1 2s infinite;
+            color: var(--accent);
+            z-index: -1;
+        }
+        
+        .glitch::after {
+            animation: glitch-2 2s infinite;
+            color: var(--accent2);
+            z-index: -2;
+        }
+        
+        @keyframes glitch-1 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+        }
+        
+        @keyframes glitch-2 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(2px, -2px); }
+            40% { transform: translate(2px, 2px); }
+        }
     </style>
 </head>
-<body class="text-white">
-    <!-- Header -->
-    <header class="border-b border-white/10 bg-black/20">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-cyan-400 to-green-400 flex items-center justify-center font-bold text-lg pulse-glow">📈</div>
-                <div>
-                    <h1 class="font-bold text-xl">Viral Predictor</h1>
-                    <p class="text-xs text-gray-400">Guess Base Social metrics. Win bragging rights.</p>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="glow">> VIRAL_PREDICTOR.exe</h1>
+            <div class="sub">[PREDICT_BASE_SOCIAL_METRICS_v1.0]</div>
+        </div>
+
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen">
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span>SYSTEM_MSG</span>
+                    <span>[OK]</span>
+                </div>
+                <div class="terminal-body">
+                    <p>> Initializing...</p>
+                    <p>> Loading prediction engine...</p>
+                    <p class="glow-pink">> READY.</p>
+                    <br>
+                    <p>Paste a Base social post URL.</p>
+                    <p>Predict metrics in 24h.</p>
+                    <p class="glow-cyan">Closest guess wins.</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <button id="installBtn" onclick="installApp()" class="hidden px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-xs text-blue-400">
-                    📲 Install App
-                </button>
-                <div class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs">
-                    🔥 <span id="userStreak">0</span>
+
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span>INPUT_URL</span>
+                    <span class="cursor"></span>
+                </div>
+                <div class="terminal-body">
+                    <input type="text" id="postUrl" placeholder="https://base.org/post/...">
+                    <br><br>
+                    <button onclick="loadPost()" class="btn btn-full">
+                        [LOAD_POST]
+                    </button>
                 </div>
             </div>
-        </div>
-    </header>
 
-    <main class="max-w-4xl mx-auto px-4 py-8">
-        <!-- Hero -->
-        <div class="text-center mb-10">
-            <h2 class="text-4xl md:text-5xl font-bold mb-4">
-                <span class="gradient-text">Predict the Viral.</span>
-            </h2>
-            <p class="text-gray-400 text-lg max-w-2xl mx-auto">
-                Paste a Base social post. Guess its metrics in 24 hours. 
-                Closest predictions climb the leaderboard.
-            </p>
-        </div>
-
-        <!-- Input Section -->
-        <div class="glass rounded-2xl p-6 mb-8 glow-blue">
-            <label class="block text-sm font-medium mb-3 text-gray-300">Base Social Post URL</label>
-            <div class="flex gap-3">
-                <input type="text" id="postUrl" placeholder="https://base.org/post/... or Warpcast URL"
-                    class="flex-1 px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder-gray-500 focus:outline-none input-glow transition">
-                <button onclick="fetchPost()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 font-semibold transition">
-                    Load Post
-                </button>
+            <!-- ASCII Art -->
+            <div class="ascii">
+    ██╗   ██╗██╗██████╗  █████╗ ██╗         
+    ██║   ██║██║██╔══██╗██╔══██╗██║         
+    ██║   ██║██║██████╔╝███████║██║         
+    ╚██╗ ██╔╝██║██╔══██╗██╔══██║██║         
+     ╚████╔╝ ██║██║  ██║██║  ██║███████╗    
+      ╚═══╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝    
             </div>
-            <p class="text-xs text-gray-500 mt-2">Works with Base App URLs and Warpcast cast URLs</p>
         </div>
 
-        <!-- Post Preview (Hidden by default) -->
-        <div id="postPreview" class="hidden mb-8">
-            <div class="glass rounded-2xl p-6 border border-blue-500/30">
-                <div class="flex items-start gap-4">
-                    <div id="authorAvatar" class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-xl">👤</div>
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span id="authorName" class="font-semibold">@username</span>
-                            <span class="text-xs text-gray-500">· 2h ago</span>
+        <!-- Game Screen (Hidden) -->
+        <div id="gameScreen" class="hidden">
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span>POST_PREVIEW</span>
+                    <span>[LIVE]</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="post-preview">
+                        <div class="post-author">@basebuilder.eth</div>
+                        <div class="post-content">
+                            Just dropped something huge on Base. 
+                            The next 24 hours are going to be wild. 
+                            Who's ready? 👇
                         </div>
-                        <p id="postContent" class="text-gray-200 mb-3">Post content goes here...</p>
-                        <div class="flex items-center gap-4 text-sm text-gray-500">
-                            <span>❤️ <span id="currentLikes">0</span></span>
-                            <span>🔄 <span id="currentRecasts">0</span></span>
-                            <span>💬 <span id="currentComments">0</span></span>
-                            <span>💰 <span id="currentTips">0</span> ETH</span>
+                        <div class="post-meta">
+                            ❤️ 1,247 · 🔄 234 · 💬 89 · 💰 0.45 ETH
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span>PREDICT_24H_METRICS</span>
+                    <span>[INPUT]</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="pred-grid">
+                        <div class="pred-input">
+                            <label>> LIKES_TARGET</label>
+                            <input type="number" id="predLikes" placeholder="2500">
+                        </div>
+                        <div class="pred-input">
+                            <label>> RECASTS_TARGET</label>
+                            <input type="number" id="predRecasts" placeholder="400">
+                        </div>
+                        <div class="pred-input">
+                            <label>> COMMENTS_TARGET</label>
+                            <input type="number" id="predComments" placeholder="150">
+                        </div>
+                        <div class="pred-input">
+                            <label>> TIPS_ETH_TARGET</label>
+                            <input type="number" id="predTips" placeholder="1.5" step="0.1">
+                        </div>
+                    </div>
+                    <button onclick="submitPred()" class="btn btn-pink btn-full">
+                        [LOCK_PREDICTION]
+                    </button>
+                </div>
+            </div>
+
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span>TOP_PREDICTORS</span>
+                    <span>[LIVE]</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="lb-row">
+                        <span class="lb-rank">#01</span>
+                        <span class="lb-name">basegod.eth</span>
+                        <span class="lb-score">94.2%</span>
+                    </div>
+                    <div class="lb-row">
+                        <span class="lb-rank">#02</span>
+                        <span class="lb-name">jesse.base</span>
+                        <span class="lb-score">91.8%</span>
+                    </div>
+                    <div class="lb-row">
+                        <span class="lb-rank">#03</span>
+                        <span class="lb-name">fitiwins</span>
+                        <span class="lb-score">89.5%</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Prediction Form (Hidden by default) -->
-        <div id="predictionForm" class="hidden">
-            <h3 class="text-xl font-semibold mb-4">🔮 Your 24h Prediction</h3>
-            <div class="grid md:grid-cols-2 gap-4 mb-6">
-                <div class="metric-card glass rounded-xl p-4">
-                    <label class="block text-sm text-gray-400 mb-2">❤️ Likes</label>
-                    <input type="number" id="predLikes" min="0" placeholder="Current + ?"
-                        class="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white focus:border-blue-500 focus:outline-none">
-                    <p class="text-xs text-gray-500 mt-1">Current: <span class="current-val">0</span></p>
+        <!-- Success Screen (Hidden) -->
+        <div id="successScreen" class="hidden">
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span>STATUS</span>
+                    <span class="glow-cyan">[LOCKED]</span>
                 </div>
-                <div class="metric-card glass rounded-xl p-4">
-                    <label class="block text-sm text-gray-400 mb-2">🔄 Recasts</label>
-                    <input type="number" id="predRecasts" min="0" placeholder="Current + ?"
-                        class="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white focus:border-blue-500 focus:outline-none">
-                    <p class="text-xs text-gray-500 mt-1">Current: <span class="current-val">0</span></p>
-                </div>
-                <div class="metric-card glass rounded-xl p-4">
-                    <label class="block text-sm text-gray-400 mb-2">💬 Comments</label>
-                    <input type="number" id="predComments" min="0" placeholder="Current + ?"
-                        class="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white focus:border-blue-500 focus:outline-none">
-                    <p class="text-xs text-gray-500 mt-1">Current: <span class="current-val">0</span></p>
-                </div>
-                <div class="metric-card glass rounded-xl p-4">
-                    <label class="block text-sm text-gray-400 mb-2">💰 Tips (ETH)</label>
-                    <input type="number" id="predTips" min="0" step="0.001" placeholder="0.00"
-                        class="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white focus:border-blue-500 focus:outline-none">
-                    <p class="text-xs text-gray-500 mt-1">Current: <span class="current-val">0</span> ETH</p>
+                <div class="terminal-body">
+                    <p class="glow" style="font-size: 24px;">> PREDICTION_SAVED</p>
+                    <br>
+                    <p>> Your guess is locked in.</p>
+                    <p>> Return in 24h for results.</p>
+                    <p class="glow-pink">> Good luck, predictor.</p>
+                    <br>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">STREAK</div>
+                            <div class="stat-value glow-cyan" id="streakVal">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">RANK</div>
+                            <div class="stat-value glow-pink">#42</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div class="glass rounded-xl p-4 mb-6 bg-yellow-500/5 border-yellow-500/20">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="text-yellow-400">⚠️</span>
-                    <span class="font-medium text-yellow-400">How scoring works</span>
-                </div>
-                <p class="text-sm text-gray-400">
-                    Predictions lock in 1 hour. Closest guess to actual 24h metrics wins. 
-                    Ties broken by submission time. Points = accuracy percentage.
-                </p>
-            </div>
-
-            <button onclick="submitPrediction()" class="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 font-bold text-lg transition">
-                Submit Prediction 🎯
+            <br>
+            <button onclick="reset()" class="btn btn-cyan btn-full">
+                [PREDICT_ANOTHER]
             </button>
         </div>
 
-        <!-- Active Predictions -->
-        <div class="mt-12">
-            <h3 class="text-xl font-semibold mb-4">🔥 Active Predictions</h3>
-            <div id="activePredictions" class="space-y-4">
-                <!-- Example prediction -->
-                <div class="glass rounded-xl p-4 border border-white/5">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-2xl">🎯</span>
-                            <span class="font-medium">@dwr.eth's launch post</span>
-                        </div>
-                        <span class="text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400">⏰ 18h left</span>
-                    </div>
-                    <div class="grid grid-cols-4 gap-2 text-center text-sm">
-                        <div class="bg-white/5 rounded-lg p-2">
-                            <div class="text-gray-400 text-xs">❤️ Likes</div>
-                            <div class="font-semibold">1,420</div>
-                            <div class="text-xs text-gray-500">pred: 2,500</div>
-                        </div>
-                        <div class="bg-white/5 rounded-lg p-2">
-                            <div class="text-gray-400 text-xs">🔄 Recasts</div>
-                            <div class="font-semibold">234</div>
-                            <div class="text-xs text-gray-500">pred: 400</div>
-                        </div>
-                        <div class="bg-white/5 rounded-lg p-2">
-                            <div class="text-gray-400 text-xs">💬 Comments</div>
-                            <div class="font-semibold">89</div>
-                            <div class="text-xs text-gray-500">pred: 150</div>
-                        </div>
-                        <div class="bg-white/5 rounded-lg p-2">
-                            <div class="text-gray-400 text-xs">💰 Tips</div>
-                            <div class="font-semibold">0.45</div>
-                            <div class="text-xs text-gray-500">pred: 1.2</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Footer -->
+        <div style="margin-top: 30px; text-align: center; font-size: 12px; color: var(--fg-dim);">
+            <p>> Built by @fitiwins for Base_</p>
+            <p>> Not affiliated with Coinbase_</p>
         </div>
-
-        <!-- Leaderboard -->
-        <div class="mt-12">
-            <h3 class="text-xl font-semibold mb-4">🏆 Top Predictors</h3>
-            <div class="glass rounded-xl overflow-hidden">
-                <div class="grid grid-cols-4 gap-4 p-4 border-b border-white/10 text-sm text-gray-400">
-                    <span>Rank</span>
-                    <span>User</span>
-                    <span class="text-right">Accuracy</span>
-                    <span class="text-right">Predictions</span>
-                </div>
-                <div id="leaderboard" class="divide-y divide-white/5">
-                    <div class="grid grid-cols-4 gap-4 p-4 items-center">
-                        <span class="text-2xl">🥇</span>
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full bg-purple-500"></div>
-                            <span class="font-medium">@basegod.eth</span>
-                        </div>
-                        <span class="text-right font-bold text-green-400">94.2%</span>
-                        <span class="text-right text-gray-400">47</span>
-                    </div>
-                    <div class="grid grid-cols-4 gap-4 p-4 items-center">
-                        <span class="text-2xl">🥈</span>
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full bg-blue-500"></div>
-                            <span class="font-medium">@jessepollak</span>
-                        </div>
-                        <span class="text-right font-bold text-green-400">91.8%</span>
-                        <span class="text-right text-gray-400">23</span>
-                    </div>
-                    <div class="grid grid-cols-4 gap-4 p-4 items-center">
-                        <span class="text-2xl">🥉</span>
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full bg-green-500"></div>
-                            <span class="font-medium">@fitiwins</span>
-                        </div>
-                        <span class="text-right font-bold text-green-400">89.5%</span>
-                        <span class="text-right text-gray-400">12</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="border-t border-white/10 mt-12 py-6">
-        <div class="max-w-6xl mx-auto px-4 text-center text-sm text-gray-500">
-            <p>Built for the Base ecosystem • Not affiliated with Coinbase</p>
-        </div>
-    </footer>
+    </div>
 
     <script>
-        // Mock data for demo
-        const mockPosts = {
-            'default': {
-                author: '@jessepollak',
-                avatar: '👨‍💻',
-                content: 'Base is for everyone. The next billion users are coming onchain. Who\'s building something special? 👇',
-                likes: 2847,
-                recasts: 523,
-                comments: 189,
-                tips: 1.42
-            }
-        };
+        // Load streak
+        const streak = localStorage.getItem('vp_streak') || '0';
+        document.getElementById('streakVal').textContent = streak;
 
-        function fetchPost() {
+        function loadPost() {
             const url = document.getElementById('postUrl').value;
             if (!url) {
-                alert('Please enter a post URL');
+                alert('> ERROR: URL_REQUIRED');
                 return;
             }
-
-            // Simulate fetching post data
-            // In production, this would call Farcaster/Base APIs
-            const post = mockPosts.default;
-            
-            document.getElementById('authorName').textContent = post.author;
-            document.getElementById('authorAvatar').textContent = post.avatar;
-            document.getElementById('postContent').textContent = post.content;
-            document.getElementById('currentLikes').textContent = post.likes.toLocaleString();
-            document.getElementById('currentRecasts').textContent = post.recasts.toLocaleString();
-            document.getElementById('currentComments').textContent = post.comments.toLocaleString();
-            document.getElementById('currentTips').textContent = post.tips;
-
-            // Update current values in prediction form
-            document.querySelectorAll('.current-val').forEach((el, i) => {
-                const values = [post.likes, post.recasts, post.comments, post.tips];
-                el.textContent = values[i].toLocaleString();
-            });
-
-            // Show preview and form
-            document.getElementById('postPreview').classList.remove('hidden');
-            document.getElementById('predictionForm').classList.remove('hidden');
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
         }
 
-        function submitPrediction() {
+        function submitPred() {
             const likes = document.getElementById('predLikes').value;
             const recasts = document.getElementById('predRecasts').value;
             const comments = document.getElementById('predComments').value;
             const tips = document.getElementById('predTips').value;
 
             if (!likes || !recasts || !comments || !tips) {
-                alert('Please fill in all predictions!');
+                alert('> ERROR: ALL_FIELDS_REQUIRED');
                 return;
             }
 
-            // In production, this would save to a database
-            alert('Prediction submitted! 🎯\n\nCome back in 24 hours to see results.');
-            
-            // Reset form
+            // Save
+            let s = parseInt(localStorage.getItem('vp_streak') || '0');
+            s++;
+            localStorage.setItem('vp_streak', s);
+
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('successScreen').classList.remove('hidden');
+            document.getElementById('streakVal').textContent = s;
+        }
+
+        function reset() {
+            document.getElementById('successScreen').classList.add('hidden');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+            document.getElementById('postUrl').value = '';
             document.getElementById('predLikes').value = '';
             document.getElementById('predRecasts').value = '';
             document.getElementById('predComments').value = '';
             document.getElementById('predTips').value = '';
-        }
-
-        // Load streak from localStorage
-        const streak = localStorage.getItem('predictionStreak') || 0;
-        document.getElementById('userStreak').textContent = streak;
-
-        // Register service worker for PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-
-        // Handle PWA install prompt
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('installBtn').classList.remove('hidden');
-        });
-
-        function installApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => {
-                    deferredPrompt = null;
-                    document.getElementById('installBtn').classList.add('hidden');
-                });
-            }
         }
     </script>
 </body>
